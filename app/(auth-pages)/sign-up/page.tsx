@@ -1,14 +1,26 @@
 import { signUpAction } from "@/app/actions";
+import { OAuthProviders } from "@/components/auth/oauth-providers";
 import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SmtpMessage } from "../smtp-message";
 
 export default async function Signup(props: {
   searchParams: Promise<Message>;
 }) {
+  // Check if user is already logged in
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Redirect to dashboard if already authenticated
+  if (user) {
+    redirect("/dashboard");
+  }
+
   const searchParams = await props.searchParams;
   if ("message" in searchParams) {
     return (
@@ -19,33 +31,47 @@ export default async function Signup(props: {
   }
 
   return (
-    <>
-      <form className="flex flex-col min-w-64 max-w-64 mx-auto">
-        <h1 className="text-2xl font-medium">Sign up</h1>
-        <p className="text-sm text text-foreground">
-          Already have an account?{" "}
-          <Link className="text-primary font-medium underline" href="/sign-in">
-            Sign in
-          </Link>
-        </p>
-        <div className="flex flex-col gap-2 [&>input]:mb-3 mt-8">
-          <Label htmlFor="email">Email</Label>
-          <Input name="email" placeholder="you@example.com" required />
-          <Label htmlFor="password">Password</Label>
-          <Input
-            type="password"
-            name="password"
-            placeholder="Your password"
-            minLength={6}
-            required
-          />
-          <SubmitButton formAction={signUpAction} pendingText="Signing up...">
-            Sign up
-          </SubmitButton>
-          <FormMessage message={searchParams} />
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md mx-auto">
+      <div className="w-full px-8 py-6 bg-card rounded-lg shadow-sm border">
+        <form className="flex flex-col w-full">
+          <h1 className="text-2xl font-medium">Join SkillBridge</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Already have an account?{" "}
+            <Link className="text-primary font-medium hover:underline" href="/sign-in">
+              Sign in
+            </Link>
+          </p>
+          <div className="flex flex-col gap-4 mt-6">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input name="fullName" placeholder="Your name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input name="email" placeholder="you@example.com" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                type="password"
+                name="password"
+                placeholder="Your password"
+                minLength={6}
+                required
+              />
+            </div>
+            <SubmitButton formAction={signUpAction} pendingText="Signing up..." className="w-full">
+              Sign up with Email
+            </SubmitButton>
+            <FormMessage message={searchParams} />
+          </div>
+        </form>
+
+        <OAuthProviders />
+        <div className="mt-4">
+          <SmtpMessage />
         </div>
-      </form>
-      <SmtpMessage />
-    </>
+      </div>
+    </div>
   );
 }

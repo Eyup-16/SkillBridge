@@ -3,12 +3,23 @@ import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SmtpMessage } from "../smtp-message";
 
 export default async function ForgotPassword(props: {
   searchParams: Promise<Message>;
 }) {
+  // Check if user is already logged in
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Redirect to dashboard if already authenticated
+  if (user) {
+    redirect("/dashboard");
+  }
+
   const searchParams = await props.searchParams;
   return (
     <>
